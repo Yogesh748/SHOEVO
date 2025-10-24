@@ -208,6 +208,7 @@ import { getAuth, onIdTokenChanged } from "firebase/auth"; // 1. Import new Fire
 import { auth } from "../firebase"; // 2. Import your firebase app's auth instance
 
 export const CartContext = createContext(null);
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 
 const CartContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
@@ -262,7 +263,7 @@ const CartContextProvider = (props) => {
     const fetchProducts = async () => {
       try {
         setLoadingProducts(true); setProductError(null);
-        const response = await axios.get('http://localhost:4000/api/product');
+        const response = await axios.get(`${API_BASE_URL}/api/product`)
         if (response.data.success) setAllProducts(response.data.data);
         else setProductError("Failed to fetch products.");
       } catch (error) { setProductError(`Could not fetch products. ${error.message}`); }
@@ -334,3 +335,4 @@ const CartContextProvider = (props) => {
   );
 };
 export default CartContextProvider;
+

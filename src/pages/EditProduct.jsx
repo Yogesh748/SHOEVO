@@ -270,6 +270,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { IoArrowBack } from 'react-icons/io5';
 
+
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const EditProduct = () => {
     const { productId } = useParams();
     const navigate = useNavigate();
@@ -293,7 +295,7 @@ const EditProduct = () => {
             if (!token) { setError("Auth required."); setLoading(false); return; }
             if (!productId) { setError("ID missing."); setLoading(false); return; }
             try {
-                const response = await axios.get(`http://localhost:4000/api/product/${productId}`);
+                const response = await axios.get(`${API_BASE_URL}/api/product/${productId}`);
                 if (response.data.success) {
                     const productData = response.data.data;
                     setData({
@@ -358,7 +360,7 @@ const EditProduct = () => {
         }
 
         try {
-            const response = await axios.put(`http://localhost:4000/api/product/update/${productId}`, formData, {
+            const response = await axios.put(`${API_BASE_URL}/api/product/update/${productId}`, formData, { // Use live URL
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {

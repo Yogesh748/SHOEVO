@@ -388,6 +388,8 @@ import axios from 'axios';
 import { IoArrowBack } from 'react-icons/io5';
 import { assets } from '../assets/assets'; // Import assets for logo
 
+
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 // Function to dynamically load the Razorpay script
 const loadRazorpayScript = (src) => {
     return new Promise((resolve) => {
@@ -482,18 +484,17 @@ const PlaceOrder = () => {
     };
 
     try {
-        console.log("Frontend: 2. Saving order (pending payment) to DB...");
-        // --- 2. Save Order (Pending Payment) to your DB ---
-        const placeOrderResponse = await axios.post('http://localhost:4000/api/order/place', orderDataPayload, {
+        // --- 2. Save Order (Pending Payment) to DB ---
+        const placeOrderResponse = await axios.post(`${API_BASE_URL}/api/order/place`, orderDataPayload, { // Use live URL
             headers: { Authorization: `Bearer ${token}` }
-        });
+        })
         if (!placeOrderResponse.data.success) throw new Error(placeOrderResponse.data.message || "Failed to save order");
         const orderIdMongoDB = placeOrderResponse.data.orderIdMongoDB;
         console.log("Frontend: 3. Order saved to DB. MongoDB ID:", orderIdMongoDB);
 
         console.log("Frontend: 4. Creating Razorpay order...");
         // --- 3. Create Razorpay Order via Backend ---
-        const razorpayOrderResponse = await axios.post('http://localhost:4000/api/order/create-razorpay-order',
+        const razorpayOrderResponse = await axios.post(`${API_BASE_URL}/api/order/create-razorpay-order`,
             { amount: finalOrderAmount }, // Send amount in base currency (e.g., INR)
             { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -522,7 +523,7 @@ const PlaceOrder = () => {
                 setIsPlacingOrder(true); // Show loading again
                 setSubmitError("");
                 try {
-                    const verificationResponse = await axios.post('http://localhost:4000/api/order/verify-payment',
+                   const verificationResponse = await axios.post(`${API_BASE_URL}/api/order/verify-payment`,
                         { ...response, orderIdMongoDB }, // Send razorpay details + your DB order ID
                         { headers: { Authorization: `Bearer ${token}` } }
                     );

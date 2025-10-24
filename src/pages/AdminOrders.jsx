@@ -169,6 +169,8 @@ import { FaBoxOpen } from "react-icons/fa"; // Icon for orders
 import Modal from '../components/Modal'; // Assuming you have Modal for potential future use
 import OrderTracker from '../components/OrderTracker'; // Import OrderTracker
 
+
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -186,8 +188,7 @@ const AdminOrders = () => {
         setLoading(true);
         setError(null);
         try {
-            // Call the backend endpoint to list all orders
-            const response = await axios.get('http://localhost:4000/api/order/list', {
+            const response = await axios.get(`${API_BASE_URL}/api/order/list`, { // Use live URL
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -220,9 +221,8 @@ const AdminOrders = () => {
              return;
          }
          try {
-            // Call the backend endpoint to update the status
-            const response = await axios.put('http://localhost:4000/api/order/status',
-             { orderId, status: newStatus }, // Send orderId and new status in body
+            const response = await axios.put(`${API_BASE_URL}/api/order/status`, // Use live URL
+             { orderId, status: newStatus },
              { headers: { Authorization: `Bearer ${token}` } }
             );
 

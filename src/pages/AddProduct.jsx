@@ -204,6 +204,7 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { CartContext } from '../context/CartContext';
 
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const AddProduct = () => {
     const { token } = useContext(CartContext);
     const [data, setData] = useState({
@@ -220,7 +221,7 @@ const AddProduct = () => {
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
-
+    
     // Universal change handler for inputs, textareas, selects, and checkboxes
     const onChangeHandler = (event) => {
         const { name, value, type, checked } = event.target;
@@ -268,7 +269,7 @@ const AddProduct = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:4000/api/product/add', formData, {
+            const response = await axios.post(`${API_BASE_URL}/api/product/add`, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -390,3 +391,4 @@ const AddProduct = () => {
     );
 };
 export default AddProduct;
+

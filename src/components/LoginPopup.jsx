@@ -10,7 +10,7 @@ const LoginPopup = () => {
   const { setShowLogin, setToken } = useContext(CartContext);
   const [currentState, setCurrentState] = useState("Login");
   const navigate = useNavigate(); // Initialize navigate
-
+  const API_BASE_URL = "https://shoevo-backend.onrender.com";
   const [data, setData] = useState({
     name: "",
     email: "",
@@ -54,7 +54,7 @@ const LoginPopup = () => {
            // Call backend to register user in MongoDB
            if (userToken) {
              try {
-                 await axios.post('http://localhost:4000/api/user/register',
+                await axios.post(`${API_BASE_URL}/api/user/register`,
                    { name: data.name, email: data.email },
                    { headers: { Authorization: `Bearer ${userToken}` } }
                  );
@@ -80,7 +80,7 @@ const LoginPopup = () => {
           if (userToken) {
               try {
                   // Call backend to get user's role
-                  const roleResponse = await axios.get('http://localhost:4000/api/user/getrole', {
+                  const roleResponse = await axios.get(`${API_BASE_URL}/api/user/getrole`, {
                       headers: { Authorization: `Bearer ${userToken}` }
                   });
 
@@ -176,3 +176,4 @@ const LoginPopup = () => {
 };
 
 export default LoginPopup;
+

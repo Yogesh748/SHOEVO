@@ -309,6 +309,7 @@ import axios from 'axios';
 import { CartContext } from '../context/CartContext';
 import { IoArrowBack } from 'react-icons/io5';
 
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [modalContent, setModalContent] = useState(null);
@@ -327,11 +328,10 @@ const Orders = () => {
     }
     setLoading(true);
     setError(null);
-    try {
-      // console.log("Orders Page (User): Making API call to /api/order/userorders...");
-      const response = await axios.get('http://localhost:4000/api/order/userorders', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+   try {
+        const response = await axios.get(`${API_BASE_URL}/api/order/userorders`, { // Use live URL
+          headers: { Authorization: `Bearer ${token}` }
+        });
       // console.log("Orders Page (User): API response received:", response.data);
       if (response.data.success) {
         setOrders(response.data.data);
@@ -361,9 +361,8 @@ const Orders = () => {
 
       if (window.confirm("Are you sure you want to cancel this order?")) {
           try {
-              const response = await axios.put(`http://localhost:4000/api/order/cancel/${orderId}`,
-                 {},
-                 { headers: { Authorization: `Bearer ${token}` } }
+              const response = await axios.put(`${API_BASE_URL}/api/order/cancel/${orderId}`, // Use live URL
+                 {}, { headers: { Authorization: `Bearer ${token}` } }
               );
               // console.log("Orders Page: Cancel response:", response.data);
               if (response.data.success) {

@@ -132,6 +132,7 @@ import { CartContext } from '../context/CartContext';
 import { IoTrashOutline, IoPencilOutline } from "react-icons/io5"; // Import Edit icon
 import { Link } from 'react-router-dom'; // Import Link
 
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const ListProducts = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -143,7 +144,7 @@ const ListProducts = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get('http://localhost:4000/api/product');
+           const response = await axios.get(`${API_BASE_URL}/api/product`);
             if (response.data.success) {
                 setProducts(response.data.data);
             } else {
@@ -170,11 +171,8 @@ const ListProducts = () => {
         }
         if (window.confirm(`Are you sure you want to remove "${productName}"? This action cannot be undone.`)) {
             try {
-                // Call the backend DELETE endpoint with the product's _id
-                const response = await axios.delete(`http://localhost:4000/api/product/remove/${productId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}` // Send auth token
-                    }
+                const response = await axios.delete(`${API_BASE_URL}/api/product/remove/${productId}`, { // Use live URL
+                    headers: { Authorization: `Bearer ${token}` }
                 });
 
                 if (response.data.success) {

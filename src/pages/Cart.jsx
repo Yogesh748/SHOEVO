@@ -164,6 +164,8 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
 import axios from 'axios';
 
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
+
 const Cart = () => {
   // Get state and setters from context
   const {
@@ -218,7 +220,7 @@ const Cart = () => {
       try {
           const codeToSubmit = promoCodeInput.trim().toUpperCase();
           // Call public validation endpoint
-          const response = await axios.post('http://localhost:4000/api/promo/validate',
+          const response = await axios.post(`${API_BASE_URL}/api/promo/validate`,
               { code: codeToSubmit }
               // No token header needed, as route is public
           );

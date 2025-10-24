@@ -3,6 +3,8 @@ import { CartContext } from '../context/CartContext';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios'; // We'll need axios to fetch user details
 
+
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const AdminRoute = ({ children }) => {
   const { token, authIsReady, setShowLogin } = useContext(CartContext);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -12,9 +14,7 @@ const AdminRoute = ({ children }) => {
     const checkAdminStatus = async () => {
       if (authIsReady && token) {
         try {
-          // **IMPORTANT: We need to create this backend endpoint next!**
-          // This endpoint will verify the token and return the user's role.
-          const response = await axios.get('http://localhost:4000/api/user/getrole', {
+          const response = await axios.get(`${API_BASE_URL}/api/user/getrole`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (response.data.success && response.data.role === 'admin') {

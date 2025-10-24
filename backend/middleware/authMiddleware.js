@@ -1,25 +1,32 @@
 import admin from 'firebase-admin';
 import User from '../models/userModel.js';
 
-// 1. Import Node.js built-in modules to read the JSON file
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import path from 'path';
+// 1. REMOVE the 'fs', 'path', and 'fileURLToPath' imports. We don't need them.
 
-// Helper to get the correct path to the key file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
-
-// 2. Read the JSON file synchronously and parse it
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+// 2. READ the service account JSON from the environment variable we just created
+// We must parse the string from the .env variable back into a JSON object
+let serviceAccount;
+try {
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+        throw new Error("FIREBASE_SERVICE_ACCOUNT environment variable is not set.");
+    }
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    console.log("authMiddleware: Successfully parsed FIREBASE_SERVICE_ACCOUNT from env.");
+} catch (error) {
+    console.error("!!! authMiddleware: FAILED to parse FIREBASE_SERVICE_ACCOUNT. Check Render env variables.", error.message);
+    // If this fails, the app can't authenticate anyone. We should exit.
+    process.exit(1);
+}
 
 // Initialize Firebase Admin SDK (only once)
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
+    console.log("authMiddleware: Firebase Admin SDK initialized.");
 }
+
+// 3. The rest of the middleware logic is the same as before
 
 const authMiddleware = async (req, res, next) => {
     const idToken = req.headers.authorization?.split('Bearer ')[1];
@@ -30,39 +37,31 @@ const authMiddleware = async (req, res, next) => {
 
     try {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
-        // 3. Attach the Firebase UID directly to req.user for the next middleware/route
-        req.user = { firebaseUid: decodedToken.uid }; 
+        req.user = { firebaseUid: decodedToken.uid }; // Attach firebaseUid
 
-        // Find user in DB (optional here, but useful for isAdmin)
+        // Find user in our DB to get their role
          const user = await User.findOne({ firebaseUid: decodedToken.uid });
          if (user) {
-            req.user.role = user.role; // Add role if user found
-            req.user.dbInfo = user; // Attach full user DB info if needed later
+            req.user.role = user.role; // Add role
+            req.user.dbInfo = user; // Attach full user DB info
          } else {
-             // Handle case where user exists in Firebase but not DB (e.g., failed registration)
-             // Depending on logic, might allow request or deny it
              console.warn(`User with UID ${decodedToken.uid} found in Firebase but not in local DB.`);
-             // For now, let's allow the request but note the role might be missing
          }
-
 
         next(); 
     } catch (error) {
         console.error("Firebase token verification failed:", error);
-        return res.status(401).json({ success: false, message: "Authorization failed (Invalid token)." });
+        return res.status(401).json({ success: false, message: "Authorization failed (Invalid/Expired token)." });
     }
 };
 
 const isAdmin = (req, res, next) => {
-    // Now check role attached in authMiddleware
     if (req.user && req.user.role === 'admin') {
         next(); 
     } else {
-         // Check if user wasn't found in DB at all during authMiddleware
          if (!req.user || !req.user.role) {
              return res.status(404).json({ success: false, message: "User not fully registered or role missing." });
          }
-         // User exists but is not admin
         res.status(403).json({ success: false, message: "Forbidden: Admin access required." });
     }
 };

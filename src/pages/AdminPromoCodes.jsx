@@ -3,6 +3,8 @@ import axios from 'axios';
 import { CartContext } from '../context/CartContext';
 import { IoTrashOutline } from "react-icons/io5";
 
+
+const API_BASE_URL = "https://shoevo-backend.onrender.com";
 const AdminPromoCodes = () => {
     const [codes, setCodes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -26,7 +28,8 @@ const AdminPromoCodes = () => {
         if (!token) { setError("Auth error"); setLoading(false); return; }
         setLoading(true); setError(null);
         try {
-            const response = await axios.get('http://localhost:4000/api/promo/list', {
+            // --- Use live URL ---
+            const response = await axios.get(`${API_BASE_URL}/api/promo/list`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -71,9 +74,10 @@ const AdminPromoCodes = () => {
         };
         console.log("Submitting payload:", payload); // Log payload
 
-        try {
-            const response = await axios.post('http://localhost:4000/api/promo/add',
-                payload, // Send the prepared payload
+       try {
+            // --- Use live URL ---
+            const response = await axios.post(`${API_BASE_URL}/api/promo/add`,
+                payload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (response.data.success) {
@@ -96,7 +100,8 @@ const AdminPromoCodes = () => {
          if (!token) { alert("Auth error"); return; }
          if (window.confirm(`Delete promo code "${codeName}"?`)) {
              try {
-                 const response = await axios.delete(`http://localhost:4000/api/promo/remove/${codeId}`, {
+                 // --- Use live URL ---
+                 const response = await axios.delete(`${API_BASE_URL}/api/promo/remove/${codeId}`, {
                      headers: { Authorization: `Bearer ${token}` }
                  });
                  if (response.data.success) {

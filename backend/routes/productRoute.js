@@ -430,26 +430,216 @@
 
 // export default productRouter;
 
+// import express from 'express';
+// import Product from '../models/productModel.js';
+// import multer from 'multer';
+// import path from 'path';
+// import { authMiddleware, isAdmin } from '../middleware/authMiddleware.js';
+// import fs from 'fs';
+
+// const productRouter = express.Router();
+
+// // --- Image Storage Configuration ---
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => { cb(null, 'uploads/'); },
+//     filename: (req, file, cb) => { cb(null, `${Date.now()}-${file.originalname}`); }
+// });
+// const imageFileFilter = (req, file, cb) => {
+//     if (file.mimetype.startsWith('image/')) { cb(null, true); }
+//     else { cb(new Error('Invalid file type. Only image files are allowed.'), false); }
+// };
+// const upload = multer({ storage: storage, fileFilter: imageFileFilter, limits: { fileSize: 1024 * 1024 * 5 }});
+// // --- End Image Config ---
+
+// // GET /api/product - Fetch all products
+// productRouter.get("/", async (req, res) => {
+//     try {
+//         const products = await Product.find({});
+//         res.json({ success: true, data: products });
+//     } catch (error) {
+//         console.error("Backend: Error fetching products:", error);
+//         res.status(500).json({ success: false, message: "Server error fetching products" });
+//     }
+// });
+
+// // GET /api/product/:id - Fetch a single product by _id
+// productRouter.get("/:id", async (req, res) => {
+//     try {
+//         const product = await Product.findById(req.params.id);
+//         if (!product) {
+//             return res.status(404).json({ success: false, message: "Product not found." });
+//         }
+//         res.json({ success: true, data: product });
+//     } catch (error) {
+//         console.error(`Backend: Error fetching product ${req.params.id}:`, error);
+//         if (error.kind === 'ObjectId') return res.status(400).json({ success: false, message: "Invalid Product ID format." });
+//         res.status(500).json({ success: false, message: "Server error fetching product" });
+//     }
+// });
+
+// // POST /api/product/add - Add a new product (Admin Only)
+// productRouter.post("/add", authMiddleware, isAdmin, upload.array("images", 4), async (req, res) => {
+//     try {
+//         if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: "No image files uploaded or invalid file type." });
+        
+//         // --- THIS IS THE FIX ---
+//         // Use the live backend URL from environment variables
+//         const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
+//         const imageUrls = req.files.map(file => `${backendUrl}/images/${file.filename}`);
+//         // --- END FIX ---
+
+//         const priceAsNumber = Number(req.body.price);
+//         if (isNaN(priceAsNumber)) return res.status(400).json({ success: false, message: "Price must be a valid number." });
+        
+//         const sizesArray = req.body.sizes ? req.body.sizes.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : [];
+//         if (sizesArray.length === 0 && req.body.sizes?.trim() !== "") return res.status(400).json({ success: false, message: "Sizes must be comma-separated numbers." });
+        
+//         const stockQuantity = Number(req.body.stock);
+//         if (isNaN(stockQuantity) || stockQuantity < 0) return res.status(400).json({ success: false, message: "Stock must be a non-negative number." });
+
+//         const product = new Product({
+//             name: req.body.name,
+//             description: req.body.description,
+//             category: req.body.category,
+//             price: priceAsNumber,
+//             audience: req.body.audience,
+//             images: imageUrls, // Use the new dynamic URLs
+//             sizes: sizesArray,
+//             stock: stockQuantity,
+//             isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true,
+//             isTrending: req.body.isTrending === 'true' || req.body.isTrending === true
+//         });
+        
+//         await product.save();
+//         res.status(201).json({ success: true, message: "Product Added Successfully!" });
+
+//     } catch (error) {
+//         console.error("Backend: Error adding product:", error);
+//         if (error instanceof multer.MulterError) return res.status(400).json({ success: false, message: `File upload error: ${error.message}` });
+//         if (error.message.includes('Invalid file type')) return res.status(400).json({ success: false, message: error.message });
+//         if (error.name === 'ValidationError') return res.status(400).json({ success: false, message: "Validation Error", errors: error.errors });
+//         res.status(500).json({ success: false, message: "Server error adding product", error: error.message });
+//     }
+// });
+
+// // PUT /api/product/update/:id - Update an existing product (Admin Only)
+// productRouter.put("/update/:id", authMiddleware, isAdmin, upload.array("images", 4), async (req, res) => {
+//      const productId = req.params.id;
+//      try {
+//          const productToUpdate = await Product.findById(productId);
+//          if (!productToUpdate) return res.status(404).json({ success: false, message: "Product not found." });
+
+//          const priceAsNumber = Number(req.body.price);
+//          if (isNaN(priceAsNumber)) return res.status(400).json({ success: false, message: "Price must be a valid number." });
+         
+//          const sizesArray = req.body.sizes ? req.body.sizes.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : productToUpdate.sizes;
+//          if (req.body.sizes && sizesArray.length === 0 && req.body.sizes.trim() !== "") return res.status(400).json({ success: false, message: "Sizes must be valid numbers." });
+         
+//          const stockQuantity = Number(req.body.stock);
+//          if (isNaN(stockQuantity) || stockQuantity < 0) return res.status(400).json({ success: false, message: "Stock must be a non-negative number." });
+
+//          const updateData = {
+//              name: req.body.name,
+//              description: req.body.description,
+//              category: req.body.category,
+//              price: priceAsNumber,
+//              audience: req.body.audience,
+//              sizes: sizesArray,
+//              stock: stockQuantity,
+//              isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true,
+//              isTrending: req.body.isTrending === 'true' || req.body.isTrending === true
+//          };
+
+//          if (req.files && req.files.length > 0) {
+//              if (productToUpdate.images && productToUpdate.images.length > 0) {
+//                  productToUpdate.images.forEach(imageUrl => {
+//                      const filename = imageUrl.split('/').pop();
+//                      const imagePath = path.join('uploads', filename);
+//                      if (fs.existsSync(imagePath)) { fs.unlink(imagePath, (err) => { if (err) console.error("Error deleting old image:", imagePath, err); }); }
+//                  });
+//              }
+//              // --- THIS IS THE FIX ---
+//              // Use the environment variable for the base URL
+//              const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
+//              updateData.images = req.files.map(file => `${backendUrl}/images/${file.filename}`);
+//              // --- END FIX ---
+//          }
+
+//          const updatedProduct = await Product.findByIdAndUpdate(productId, updateData, { new: true, runValidators: true });
+//          if (!updatedProduct) return res.status(404).json({ success: false, message: "Product not found after update." });
+
+//          res.json({ success: true, message: "Product updated successfully!", data: updatedProduct });
+//      } catch (error) {
+//          console.error(`Backend: Error updating product ${productId}:`, error);
+//          if (error instanceof multer.MulterError) return res.status(400).json({ success: false, message: `File upload error: ${error.message}` });
+//          if (error.message.includes('Invalid file type')) return res.status(400).json({ success: false, message: error.message });
+//          if (error.name === 'ValidationError') return res.status(400).json({ success: false, message: "Validation Error", errors: error.errors });
+//          if (error.kind === 'ObjectId') return res.status(400).json({ success: false, message: "Invalid Product ID format." });
+//          res.status(500).json({ success: false, message: "Server error updating product", error: error.message });
+//      }
+// });
+
+// // DELETE /api/product/remove/:id - Remove a product (Admin Only)
+// productRouter.delete("/remove/:id", authMiddleware, isAdmin, async (req, res) => {
+//     try {
+//         const productId = req.params.id;
+//         const product = await Product.findById(productId);
+//         if (!product) return res.status(404).json({ success: false, message: "Product not found." });
+
+//         if (product.images && product.images.length > 0) {
+//              product.images.forEach(imageUrl => {
+//                  const filename = imageUrl.split('/').pop();
+//                  const imagePath = path.join('uploads', filename);
+//                  if (fs.existsSync(imagePath)) { fs.unlink(imagePath, (err) => { if (err) console.error("Error deleting image file:", imagePath, err); }); }
+//              });
+//         }
+//         await Product.findByIdAndDelete(productId);
+//         res.json({ success: true, message: "Product removed successfully!" });
+//     } catch (error) {
+//         console.error("Backend: Error removing product:", error);
+//          if (error.kind === 'ObjectId') return res.status(400).json({ success: false, message: "Invalid Product ID format." });
+//         res.status(500).json({ success: false, message: "Server error removing product", error: error.message });
+//     }
+// });
+
+// export default productRouter;
+
 import express from 'express';
 import Product from '../models/productModel.js';
 import multer from 'multer';
 import path from 'path';
 import { authMiddleware, isAdmin } from '../middleware/authMiddleware.js';
 import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary'; // Import Cloudinary v2
+import { CloudinaryStorage } from 'multer-storage-cloudinary'; // Import Cloudinary storage for multer
+
+// --- NEW: Cloudinary Configuration ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true, // Use HTTPS
+});
+
+// Configure multer storage to use Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'shoevo', // Save files to a folder named 'shoevo' in Cloudinary
+    allowed_formats: ['jpeg', 'png', 'jpg', 'webp', 'avif'], // Allowed formats
+    // public_id: (req, file) => `${Date.now()}-${file.originalname}`, // Optional: custom public ID
+  },
+});
+
+// --- UPDATED: Multer upload configuration ---
+// We remove the local file filter because Cloudinary's `allowed_formats` handles it.
+const upload = multer({
+    storage: storage, // Use Cloudinary storage
+    limits: { fileSize: 1024 * 1024 * 5 } // 5MB limit (optional)
+});
+// --- End Image Config ---
 
 const productRouter = express.Router();
-
-// --- Image Storage Configuration ---
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => { cb(null, 'uploads/'); },
-    filename: (req, file, cb) => { cb(null, `${Date.now()}-${file.originalname}`); }
-});
-const imageFileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) { cb(null, true); }
-    else { cb(new Error('Invalid file type. Only image files are allowed.'), false); }
-};
-const upload = multer({ storage: storage, fileFilter: imageFileFilter, limits: { fileSize: 1024 * 1024 * 5 }});
-// --- End Image Config ---
 
 // GET /api/product - Fetch all products
 productRouter.get("/", async (req, res) => {
@@ -480,20 +670,19 @@ productRouter.get("/:id", async (req, res) => {
 // POST /api/product/add - Add a new product (Admin Only)
 productRouter.post("/add", authMiddleware, isAdmin, upload.array("images", 4), async (req, res) => {
     try {
-        if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: "No image files uploaded or invalid file type." });
-        
-        // --- THIS IS THE FIX ---
-        // Use the live backend URL from environment variables
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-        const imageUrls = req.files.map(file => `${backendUrl}/images/${file.filename}`);
-        // --- END FIX ---
+        if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: "No image files uploaded." });
+
+        // --- UPDATED: Get URLs from Cloudinary ---
+        // `file.path` is the secure URL provided by Cloudinary
+        const imageUrls = req.files.map(file => file.path);
+        // --- END UPDATE ---
 
         const priceAsNumber = Number(req.body.price);
         if (isNaN(priceAsNumber)) return res.status(400).json({ success: false, message: "Price must be a valid number." });
-        
+
         const sizesArray = req.body.sizes ? req.body.sizes.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : [];
         if (sizesArray.length === 0 && req.body.sizes?.trim() !== "") return res.status(400).json({ success: false, message: "Sizes must be comma-separated numbers." });
-        
+
         const stockQuantity = Number(req.body.stock);
         if (isNaN(stockQuantity) || stockQuantity < 0) return res.status(400).json({ success: false, message: "Stock must be a non-negative number." });
 
@@ -503,20 +692,19 @@ productRouter.post("/add", authMiddleware, isAdmin, upload.array("images", 4), a
             category: req.body.category,
             price: priceAsNumber,
             audience: req.body.audience,
-            images: imageUrls, // Use the new dynamic URLs
+            images: imageUrls, // Save the new Cloudinary URLs
             sizes: sizesArray,
             stock: stockQuantity,
             isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true,
             isTrending: req.body.isTrending === 'true' || req.body.isTrending === true
         });
-        
+
         await product.save();
         res.status(201).json({ success: true, message: "Product Added Successfully!" });
 
     } catch (error) {
         console.error("Backend: Error adding product:", error);
         if (error instanceof multer.MulterError) return res.status(400).json({ success: false, message: `File upload error: ${error.message}` });
-        if (error.message.includes('Invalid file type')) return res.status(400).json({ success: false, message: error.message });
         if (error.name === 'ValidationError') return res.status(400).json({ success: false, message: "Validation Error", errors: error.errors });
         res.status(500).json({ success: false, message: "Server error adding product", error: error.message });
     }
@@ -531,10 +719,10 @@ productRouter.put("/update/:id", authMiddleware, isAdmin, upload.array("images",
 
          const priceAsNumber = Number(req.body.price);
          if (isNaN(priceAsNumber)) return res.status(400).json({ success: false, message: "Price must be a valid number." });
-         
+
          const sizesArray = req.body.sizes ? req.body.sizes.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) : productToUpdate.sizes;
          if (req.body.sizes && sizesArray.length === 0 && req.body.sizes.trim() !== "") return res.status(400).json({ success: false, message: "Sizes must be valid numbers." });
-         
+
          const stockQuantity = Number(req.body.stock);
          if (isNaN(stockQuantity) || stockQuantity < 0) return res.status(400).json({ success: false, message: "Stock must be a non-negative number." });
 
@@ -550,19 +738,27 @@ productRouter.put("/update/:id", authMiddleware, isAdmin, upload.array("images",
              isTrending: req.body.isTrending === 'true' || req.body.isTrending === true
          };
 
+         // If new images are uploaded, update the image list
          if (req.files && req.files.length > 0) {
+             // --- UPDATED: Get new URLs from Cloudinary ---
+             updateData.images = req.files.map(file => file.path);
+             // --- END UPDATE ---
+
+             // --- NEW: Delete old images from Cloudinary ---
              if (productToUpdate.images && productToUpdate.images.length > 0) {
-                 productToUpdate.images.forEach(imageUrl => {
-                     const filename = imageUrl.split('/').pop();
-                     const imagePath = path.join('uploads', filename);
-                     if (fs.existsSync(imagePath)) { fs.unlink(imagePath, (err) => { if (err) console.error("Error deleting old image:", imagePath, err); }); }
-                 });
+                 console.log("Backend: Deleting old images from Cloudinary...");
+                 for (const imageUrl of productToUpdate.images) {
+                     // Extract public_id from URL
+                     const publicId = `shoevo/${imageUrl.split('/').pop().split('.')[0]}`;
+                     try {
+                         await cloudinary.uploader.destroy(publicId);
+                         console.log(`Deleted: ${publicId}`);
+                     } catch (deleteError) {
+                         console.error("Error deleting old image from Cloudinary:", deleteError);
+                     }
+                 }
              }
-             // --- THIS IS THE FIX ---
-             // Use the environment variable for the base URL
-             const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-             updateData.images = req.files.map(file => `${backendUrl}/images/${file.filename}`);
-             // --- END FIX ---
+             // --- END DELETE ---
          }
 
          const updatedProduct = await Product.findByIdAndUpdate(productId, updateData, { new: true, runValidators: true });
@@ -572,7 +768,6 @@ productRouter.put("/update/:id", authMiddleware, isAdmin, upload.array("images",
      } catch (error) {
          console.error(`Backend: Error updating product ${productId}:`, error);
          if (error instanceof multer.MulterError) return res.status(400).json({ success: false, message: `File upload error: ${error.message}` });
-         if (error.message.includes('Invalid file type')) return res.status(400).json({ success: false, message: error.message });
          if (error.name === 'ValidationError') return res.status(400).json({ success: false, message: "Validation Error", errors: error.errors });
          if (error.kind === 'ObjectId') return res.status(400).json({ success: false, message: "Invalid Product ID format." });
          res.status(500).json({ success: false, message: "Server error updating product", error: error.message });
@@ -586,13 +781,22 @@ productRouter.delete("/remove/:id", authMiddleware, isAdmin, async (req, res) =>
         const product = await Product.findById(productId);
         if (!product) return res.status(404).json({ success: false, message: "Product not found." });
 
+        // --- NEW: Delete images from Cloudinary ---
         if (product.images && product.images.length > 0) {
-             product.images.forEach(imageUrl => {
-                 const filename = imageUrl.split('/').pop();
-                 const imagePath = path.join('uploads', filename);
-                 if (fs.existsSync(imagePath)) { fs.unlink(imagePath, (err) => { if (err) console.error("Error deleting image file:", imagePath, err); }); }
-             });
+             console.log("Backend: Deleting product images from Cloudinary...");
+             for (const imageUrl of product.images) {
+                 const publicId = `shoevo/${imageUrl.split('/').pop().split('.')[0]}`;
+                 try {
+                     await cloudinary.uploader.destroy(publicId);
+                     console.log(`Deleted: ${publicId}`);
+                 } catch (deleteError) {
+                     console.error("Error deleting image from Cloudinary:", deleteError);
+                 }
+             }
         }
+        // --- END DELETE ---
+
+        // Delete product from DB
         await Product.findByIdAndDelete(productId);
         res.json({ success: true, message: "Product removed successfully!" });
     } catch (error) {

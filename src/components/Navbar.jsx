@@ -222,7 +222,7 @@ const Navbar = () => {
                     <Link to='/' onClick={() => setIsMenuOpen(false)}>
                         <img
                             src={assets.logo}
-                            className="h-12 w-auto"
+                            className="h-12 w-auto rounded-full"
                             alt="Shoevo logo"
                         />
                     </Link>

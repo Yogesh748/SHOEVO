@@ -221,7 +221,7 @@ const Navbar = () => {
                 <div className="flex-shrink-0">
                     <Link to='/' onClick={() => setIsMenuOpen(false)}>
                         <img
-                            src={assets.shoevo}
+                            src={assets.logo}
                             className="h-12 w-auto"
                             alt="Shoevo logo"
                         />
